@@ -66,7 +66,7 @@ def vad():
                     break
 
             if not os.path.exists(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0]):
-                os.mkdir(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0])              
+                os.makedirs(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0])              
             for i in mini_audio:
                save_audio(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0] + '/' + str(j) + '.wav', i, sampling_rate = SAMPLING_RATE)
                j = j + 1 
