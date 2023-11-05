@@ -27,7 +27,7 @@ def vad():
     with open(args.path_file_csv, 'w', encoding = 'UTF8', newline='') as f:
         writer = csv.writer(f)
 
-        writer.writerow('path', 'timestamps')
+        writer.writerow(['path', 'timestamps'])
 
         for name in glob.glob(args.path_folder_file_wav + '/*.wav'):
             j = 0
