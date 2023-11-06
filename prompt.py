@@ -95,12 +95,15 @@ data = []
 for i in range(len(min_mat)):
     data.append([min_mat[i], min_path[i]])
 
-data = pd.DataFrame(data)
-data.columns = ['MinCos', 'Path']
+if data:
+    data = pd.DataFrame(data)
+    data.columns = ['MinCos', 'Path']
 
-print("Save csv to " + str(args.file_csv))
-my_file = Path(args.file_csv)
-try:
-    data.to_csv(args.file_csv, index=False)
-except Exception as e:
-    print(f"Error saving CSV: {str(e)}")
+    print("Save csv to " + str(args.file_csv))
+    my_file = Path(args.file_csv)
+    try:
+        data.to_csv(args.file_csv, index=False)
+    except Exception as e:
+        print(f"Error saving CSV: {str(e)}")
+else:
+    print("No data to save to the CSV file.")
