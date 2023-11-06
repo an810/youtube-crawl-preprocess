@@ -49,7 +49,10 @@ def vad():
                     if sum >= 48000:      
                         mini_audio.append(collect_chunks(speech_timestamps_mini, wav))       
                         timestamps = ', '.join(str(item) for item in speech_timestamps_mini)
-                        writer.writerow([args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0] + '/' + str(h), timestamps])
+                        writer.writerow(
+                            [args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0] + '/' + str(h),
+                             timestamps])
+
                         speech_timestamps_mini.clear()
                         sum = 0
                         h = h + 1
@@ -66,7 +69,7 @@ def vad():
                     break
 
             if not os.path.exists(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0]):
-                os.makedirs(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0])              
+                os.mkdir(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0])              
             for i in mini_audio:
                save_audio(args.save_dir + '/' + os.path.splitext(os.path.basename(name))[0] + '/' + str(j) + '.wav', i, sampling_rate = SAMPLING_RATE)
                j = j + 1 
