@@ -37,38 +37,25 @@ list_folder = glob.glob(list_folder)
 
 classifier = EncoderClassifier.from_hparams(run_opts={"device":'cuda'}, source="speechbrain/spkrec-ecapa-voxceleb", savedir="pretrained_models/spkrec-ecapa-voxceleb")
 
-#define cospair function
-
-def cos_pair(a,b):
-  return dot(a,b.T)/linalg.norm(a)/linalg.norm(b)
+# Define cospair function
+def cos_pair(a, b):
+    return dot(a, b.T) / linalg.norm(a) / linalg.norm(b)
 
 # Process the input audio
 def process_input_audio(input_audio_path):
     frequency, signal = wavfile.read(input_audio_path)
-    slice_length = 1.2  # in seconds
-    overlap = 0.2  # in seconds
-    slices = np.arange(0, len(signal) / frequency, slice_length - overlap, dtype=np.int)
-    input_audio_slices = []
-
-    for start, end in zip(slices[:-1], slices[1:]):
-        start_audio = start * frequency
-        end_audio = (end + overlap) * frequency
-        audio_slice = signal[int(start_audio): int(end_audio)]
-        audio_slice = audio_slice.reshape(1, -1)
-        audio_slice = torch.tensor(audio_slice).to('cuda')
-        audio_slice = classifier.encode_batch(audio_slice)
-        audio_slice = audio_slice.detach().cpu().squeeze()
-        input_audio_slices.append(audio_slice)
-
-    return input_audio_slices
+    audio = signal.reshape(1, -1)
+    audio = torch.tensor(audio).to('cuda')
+    audio = classifier.encode_batch(audio)
+    audio = audio.detach().cpu().squeeze()
+    return audio
 
 # Process input audio
 input_audio_path = str(args.audio_dir)  # Replace with the path to your input audio
-input_audio_slices = process_input_audio(input_audio_path)
+input_audio_embeddings = process_input_audio(input_audio_path)
 
 # Calculate cosine similarity between the input audio and all audio files in wav_dir
-min_mat = []
-min_path = []
+cosine_similarities = []
 
 for le in range(len(list_folder)):
     x = glob.glob(str(list_folder[le]) + '*.wav')
@@ -76,34 +63,17 @@ for le in range(len(list_folder)):
     for _ in range(len(x)):
         try:
             frequency, signal = wavfile.read(x[_])
-            audio_slices = process_input_audio(x[_])
-            
-            matrix_audio = [[0] * len(audio_slices) for i in range(len(input_audio_slices))]
-            for i in range(len(input_audio_slices)):
-                for j in range(len(audio_slices)):
-                    matrix_audio[i][j] = (cos_pair(input_audio_slices[i], audio_slices[j]))
-            
-            mymin = min([min(r) for r in matrix_audio])
-            min_mat.append(mymin)
-            min_path.append(x[_])
+            audio_embeddings = process_input_audio(x[_])
+            similarity = cos_pair(input_audio_embeddings, audio_embeddings)
+            cosine_similarities.append((x[_], similarity))
         except Exception as e:
             print(f"Error processing {x[_]}: {str(e)}")
-            os.remove(x[_])
-    print(le)
 
-data = []
-for i in range(len(min_mat)):
-    data.append([min_mat[i], min_path[i]])
+data = pd.DataFrame(cosine_similarities, columns=['Path', 'Cosine_Similarity'])
 
-if data:
-    data = pd.DataFrame(data)
-    data.columns = ['MinCos', 'Path']
-
-    print("Save csv to " + str(args.file_csv))
-    my_file = Path(args.file_csv)
-    try:
-        data.to_csv(args.file_csv, index=False)
-    except Exception as e:
-        print(f"Error saving CSV: {str(e)}")
-else:
-    print("No data to save to the CSV file.")
+print("Save csv to " + str(args.file_csv))
+my_file = Path(args.file_csv)
+try:
+    data.to_csv(args.file_csv, index=False)
+except Exception as e:
+    print(f"Error saving CSV: {str(e)}")
